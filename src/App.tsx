@@ -37,7 +37,8 @@ enum Days {
 }
 
 //曜日文字列配列
-const week = Object.keys(Days).filter((v) => isNaN(Number(v)));
+const week = ["日", "月", "火", "水", "木", "金", "土"];
+// const week = Object.keys(Days).filter((v) => isNaN(Number(v)));
 // console.log(week[week.length - 1]);
 
 //月列挙
@@ -67,6 +68,7 @@ type Schedule = {
 
 //日ごとの要素
 type DateProps = {
+  id: number;
   year: number | dayjs.Dayjs;
   month: Month | dayjs.Dayjs;
   day: Days | dayjs.Dayjs;
@@ -78,7 +80,7 @@ type DateProps = {
 //日ごとの内容表示
 const Date = (props: DateProps) => (
   <div className="date-container">
-    <div onClick={props.onClick}>{props.dayNumber.valueOf()}</div>
+    <div onClick={props.onClick}>{props.dayNumber as number}</div>
     {props.schedule ? (
       <div className="date-schedule">${props.schedule[0].title}</div>
     ) : (
@@ -88,16 +90,19 @@ const Date = (props: DateProps) => (
 );
 
 //1月ごとの要素
-type MonthState = Repeat<DateProps, 42>;
+type MonthState = Repeat<DateProps, 35>;
 
 type MonthProps = {
   squares: MonthState;
-  onClick: (i: number) => void;
+  onClick: (data: DateProps) => void;
 };
 
 const CalendarBoard = (props: MonthProps) => {
   const renderDate = (i: number) => (
-    <Date {...props.squares[i]} onClick={() => props.onClick(i)} />
+    <Date
+      {...props.squares[i]}
+      onClick={() => props.onClick(props.squares[i])}
+    />
   );
 
   const elm = [];
@@ -108,8 +113,14 @@ const CalendarBoard = (props: MonthProps) => {
     }
     elm.push(<tr key={`row_${i / 7 + 1}`}>{items}</tr>);
   }
-  console.log(elm);
-  return elm;
+  // console.log(elm);
+  return (
+    <>
+      {elm.map((value) => {
+        return value;
+      })}
+    </>
+  );
 };
 
 type Data = {
@@ -122,69 +133,96 @@ type CalendarState = {
 };
 
 const Calendar = () => {
-  const nowData = getCalendarData(0);
-  const calendarTable: DateProps[] = [];
-  // const thisMonth = (props: MonthProps) => {
-  //   squares: [null];
-  // };
+  // let current = 0;
+  const [current, setCurrent] = useState(0);
+  const [schedule, setSchedule] = useState<Schedule>();
 
-  for (let i = 0; i < 42; i++) {
-    const thisMonth = {
-      year: nowData[0],
-      month: nowData[0],
-      day: nowData[1],
-      dayNumber: i + 1,
-      onClick: () => handleClick(i),
-    };
-    calendarTable.push(thisMonth);
-    // calendarTable.onClick = () => handleClick(i);
-  }
+  const generate = (i: number) => {
+    // console.log(current);
+    const nowData = getCalendarData(i);
+    const lastMonthData = getCalendarData(i - 1);
+    const nextMonthData = getCalendarData(i + 1);
+    const lastDate = nowData.startDate.add(-1, "day").get("date");
 
-  // const current = state.days[state.index];
+    const calendarTable: DateProps[] = [];
+    // console.log(nowData.data.format("M"));
+    let cnt = 0;
 
-  // const next: Date = (({ year, month, day, dayNumber }) => {
-  //   return {
-  //     dayNumber: dayNumber + 1,
-  //     month:
-  //       dayNumber > 31
-  //         ? month + 1 > Month.Dec
-  //           ? Month.Jan
-  //           : month + 1
-  //         : month,
-  //     year: year,
-  //     day: day + 1 > Days.Sat ? Days.Sun : day + 1,
-  //     schedule: [],
-  //   };
-  // })(current);
+    for (let day = nowData.startDay; day > 0; day--) {
+      const thisMonth = {
+        id: cnt,
+        year: lastMonthData.data.get("year"),
+        month: lastMonthData.data.get("month"),
+        day: day,
+        dayNumber: lastDate - day + 1,
+        onClick: () => handleClick(thisMonth),
+      };
+      calendarTable.push(thisMonth);
+      cnt++;
+    }
 
-  // setState(({ days, index }) => {
-  //   const newDate = days.slice(0, index + 1).concat(next);
+    for (
+      let date = nowData.startDate.get("date");
+      date < nowData.endDate.get("date") + 1;
+      date++
+    ) {
+      // console.log(date);
+      const thisMonth = {
+        id: cnt,
 
-  //   return {
-  //     days: newDate,
-  //     index: newDate.length - 1,
-  //   };
-  // });
+        year: nowData.data.get("year"),
+        month: nowData.data.get("month"),
+        day: nowData.startDate.add(date).get("day"),
+        dayNumber: date,
+        onClick: () => handleClick(thisMonth),
+      };
+      cnt++;
+      calendarTable.push(thisMonth);
+    }
+    // console.log(nowData.endDay);
 
-  const prevMonth = (i: number) => {
+    for (let day = 1; day < 7 - nowData.endDay; day++) {
+      // console.log(day);
+      const thisMonth: DateProps = {
+        id: cnt,
+        year: nextMonthData.data.get("year"),
+        month: nextMonthData.data.get("month"),
+        day: day,
+        dayNumber: nowData.endDate.add(day, "day").get("date"),
+        onClick: () => handleClick(thisMonth),
+      };
+      cnt++;
+      calendarTable.push(thisMonth);
+    }
+    // console.log(calendarTable);
+    return { calendarTable, nowData };
+  };
+
+  const selectMonth = (i: number) => {
+    setCurrent((current) => current + i);
+    console.log(current);
+    // generate(current);
     return;
   };
 
-  const handleClick = (i: number) => {
-    console.log(`handleClick: ${i}`);
+  const handleClick = (data: DateProps) => {
+    console.log(data.id);
     return;
   };
 
   return (
     <div>
       <div className="monthSelect">
-        <button className="prev" onClick={() => prevMonth(0)}>
-          {"<"}
-        </button>
-        <p>{"YYYY-MM"}</p>
-        <button className="next" onClick={() => prevMonth(0)}>
-          {">"}
-        </button>
+        <span>
+          <button className="prev" onClick={() => selectMonth(-1)}>
+            {"<"}
+          </button>
+          {`${generate(current).nowData.data.format("YYYY")}年
+          ${generate(current).nowData.data.format("M")}月`}
+          <button className="next" onClick={() => selectMonth(1)}>
+            {">"}
+          </button>
+        </span>
       </div>
       <table>
         <tbody>
@@ -199,7 +237,10 @@ const Calendar = () => {
               return <td key={index}>{days.dayNumber}</td>;
             })}
           </tr> */}
-          <CalendarBoard squares={calendarTable} onClick={handleClick} />
+          <CalendarBoard
+            squares={generate(current).calendarTable}
+            onClick={handleClick}
+          />
         </tbody>
       </table>
     </div>
@@ -207,12 +248,12 @@ const Calendar = () => {
 };
 
 const getCalendarData = (i: number) => {
-  const month = now.add(i, "month");
-  const startDate = month.startOf("month");
-  const endDate = month.endOf("month");
+  const data = now.add(i, "month");
+  const startDate = data.startOf("month");
+  const endDate = data.endOf("month");
   const startDay = startDate.get("day");
   const endDay = endDate.get("day");
-  return [month, startDay, endDay, startDate, endDate];
+  return { data, startDay, endDay, startDate, endDate };
 };
 
 export default Calendar;
