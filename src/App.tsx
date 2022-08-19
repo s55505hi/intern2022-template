@@ -21,11 +21,8 @@ import ja from "dayjs/locale/ja";
 import { useTable } from "react-table";
 import { columns } from "./tableData";
 
-dayjs.locale(ja);
-
-const data = null;
-
 //dayjs初期化
+dayjs.locale(ja);
 const now = dayjs();
 
 //曜日列挙
@@ -81,7 +78,7 @@ type DateProps = {
 //日ごとの内容表示
 const Date = (props: DateProps) => (
   <div className="date-container">
-    <div>{props.dayNumber.valueOf()}</div>
+    <div onClick={props.onClick}>{props.dayNumber.valueOf()}</div>
     {props.schedule ? (
       <div className="date-schedule">${props.schedule[0].title}</div>
     ) : (
@@ -102,22 +99,16 @@ const CalendarBoard = (props: MonthProps) => {
   const renderDate = (i: number) => (
     <Date {...props.squares[i]} onClick={() => props.onClick(i)} />
   );
-  const elm = (
-    <tr>
-      {(() => {
-        const items = [];
-        items.push(<tr></tr>);
-        for (let i = 0; i < props.squares.length; i++) {
-          for (let j = Days.Sun; j < Days.Sat + 1; j++) {
-            items.push(<td>{renderDate(j)}</td>);
-          }
-        }
-        console.log(items);
-        return items;
-      })()}
-    </tr>
-  );
 
+  const elm = [];
+  for (let i = 0; i < props.squares.length; i += 7) {
+    const items = [];
+    for (let j = Days.Sun; j < Days.Sat + 1; j++) {
+      items.push(<td key={i + j}>{renderDate(i + j)}</td>);
+    }
+    elm.push(<tr key={`row_${i / 7 + 1}`}>{items}</tr>);
+  }
+  console.log(elm);
   return elm;
 };
 
@@ -146,6 +137,7 @@ const Calendar = () => {
       onClick: () => handleClick(i),
     };
     calendarTable.push(thisMonth);
+    // calendarTable.onClick = () => handleClick(i);
   }
 
   // const current = state.days[state.index];
@@ -173,12 +165,27 @@ const Calendar = () => {
   //     index: newDate.length - 1,
   //   };
   // });
+
+  const prevMonth = (i: number) => {
+    return;
+  };
+
   const handleClick = (i: number) => {
+    console.log(`handleClick: ${i}`);
     return;
   };
 
   return (
     <div>
+      <div className="monthSelect">
+        <button className="prev" onClick={() => prevMonth(0)}>
+          {"<"}
+        </button>
+        <p>{"YYYY-MM"}</p>
+        <button className="next" onClick={() => prevMonth(0)}>
+          {">"}
+        </button>
+      </div>
       <table>
         <tbody>
           <tr className="dayHeader">
