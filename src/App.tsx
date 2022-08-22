@@ -8,6 +8,16 @@ import {
   Image,
   Link,
   Text,
+  useDisclosure,
+  Popover,
+  Portal,
+  PopoverContent,
+  PopoverArrow,
+  PopoverHeader,
+  PopoverCloseButton,
+  PopoverFooter,
+  PopoverBody,
+  PopoverTrigger,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import reactLogo from "./assets/react.svg";
@@ -16,14 +26,17 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import { Repeat } from "typescript-tuple";
 import { Square } from "@chakra-ui/react";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import ja from "dayjs/locale/ja";
+import weekday from "dayjs/plugin/weekday";
 import { useTable } from "react-table";
 import { columns } from "./tableData";
 
 //dayjs初期化
+dayjs.extend(weekday);
 dayjs.locale(ja);
 const now = dayjs();
+console.log(now.day());
 
 //曜日列挙
 enum Days {
@@ -60,29 +73,56 @@ enum Month {
 //予定
 type Schedule = {
   title: string;
-  day: string;
+  day: string | dayjs.Dayjs;
   startTime: string;
   endTime: string;
   description: string;
 };
 
+const SchedulePopOver = () => {
+  const { isOpen, onClose } = useDisclosure();
+  const firstFieldRef = React.useRef(null);
+  return (
+    <Popover isOpen={isOpen} onClose={onClose}>
+      <Portal>
+        <PopoverContent>
+          <PopoverArrow />
+          <PopoverHeader>header</PopoverHeader>
+          <PopoverCloseButton />
+          <PopoverBody>
+            <Button colorScheme="blue" onClick={onClose}>
+              close
+            </Button>
+          </PopoverBody>
+          <PopoverFooter>footer</PopoverFooter>
+        </PopoverContent>
+      </Portal>
+    </Popover>
+  );
+};
+
 //日ごとの要素
 type DateProps = {
   id: number;
-  year: number | dayjs.Dayjs;
-  month: Month | dayjs.Dayjs;
-  day: Days | dayjs.Dayjs;
-  dayNumber: number | dayjs.Dayjs;
+  dayjsVal: Dayjs;
+  year: number;
+  month: Month;
+  day: Days;
+  date: number;
   schedule?: Schedule[];
   onClick: () => void;
 };
 
 //日ごとの内容表示
 const Date = (props: DateProps) => (
-  <div className="date-container">
-    <div onClick={props.onClick}>{props.dayNumber as number}</div>
+  <div className="date-container" onClick={props.onClick}>
+    {props.dayjsVal.format("DD/MM/YYYY") == now.format("DD/MM/YYYY") ? (
+      <div className="today">{props.date}日</div>
+    ) : (
+      <div>{props.date}日</div>
+    )}
     {props.schedule ? (
-      <div className="date-schedule">${props.schedule[0].title}</div>
+      <div className="date-schedule">{props.schedule[0].title}</div>
     ) : (
       ""
     )}
@@ -97,6 +137,7 @@ type MonthProps = {
   onClick: (data: DateProps) => void;
 };
 
+//日ごとの表示
 const CalendarBoard = (props: MonthProps) => {
   const renderDate = (i: number) => (
     <Date
@@ -123,38 +164,48 @@ const CalendarBoard = (props: MonthProps) => {
   );
 };
 
-type Data = {
-  squares: MonthState;
-};
-
-type CalendarState = {
-  readonly days: Data[];
-  readonly index: number;
-};
-
 const Calendar = () => {
-  // let current = 0;
+  const [state, setState] = useState<DateProps[]>([]);
+
+  //月選択用(現在日時からの相対)
   const [current, setCurrent] = useState(0);
-  const [schedule, setSchedule] = useState<Schedule>();
+
+  //スケジュール動的変更
+  const [schedule, setSchedule] = useState<Schedule[]>([]);
+  const newSchedule = () => {
+    setSchedule([
+      ...schedule,
+      {
+        title: "",
+        day: "",
+        startTime: "",
+        endTime: "",
+        description: "",
+      },
+    ]);
+  };
+
+  let calendarTable: DateProps[] = [];
 
   const generate = (i: number) => {
+    calendarTable = [];
     // console.log(current);
     const nowData = getCalendarData(i);
     const lastMonthData = getCalendarData(i - 1);
     const nextMonthData = getCalendarData(i + 1);
     const lastDate = nowData.startDate.add(-1, "day").get("date");
 
-    const calendarTable: DateProps[] = [];
-    // console.log(nowData.data.format("M"));
+    // console.log(nowData);
     let cnt = 0;
 
-    for (let day = nowData.startDay; day > 0; day--) {
+    for (let date = nowData.startDay; date > 0; date--) {
       const thisMonth = {
         id: cnt,
+        dayjsVal: nowData.startDate.subtract(date, "day"),
         year: lastMonthData.data.get("year"),
         month: lastMonthData.data.get("month"),
-        day: day,
-        dayNumber: lastDate - day + 1,
+        day: nowData.startDate.subtract(date, "day").day(),
+        date: lastDate - date + 1,
         onClick: () => handleClick(thisMonth),
       };
       calendarTable.push(thisMonth);
@@ -169,11 +220,11 @@ const Calendar = () => {
       // console.log(date);
       const thisMonth = {
         id: cnt,
-
+        dayjsVal: nowData.startDate.add(date - 1, "day"),
         year: nowData.data.get("year"),
         month: nowData.data.get("month"),
-        day: nowData.startDate.add(date).get("day"),
-        dayNumber: date,
+        day: nowData.startDate.add(date - 1, "day").day(),
+        date: date,
         onClick: () => handleClick(thisMonth),
       };
       cnt++;
@@ -185,10 +236,11 @@ const Calendar = () => {
       // console.log(day);
       const thisMonth: DateProps = {
         id: cnt,
+        dayjsVal: nowData.endDate.add(day, "day"),
         year: nextMonthData.data.get("year"),
         month: nextMonthData.data.get("month"),
-        day: day,
-        dayNumber: nowData.endDate.add(day, "day").get("date"),
+        day: nowData.endDay + day,
+        date: nowData.endDate.add(day, "day").get("date"),
         onClick: () => handleClick(thisMonth),
       };
       cnt++;
@@ -206,7 +258,9 @@ const Calendar = () => {
   };
 
   const handleClick = (data: DateProps) => {
+    calendarTable[data.id].schedule?.push(newSchedule);
     console.log(data.id);
+    console.log(calendarTable[data.id]);
     return;
   };
 
@@ -214,12 +268,12 @@ const Calendar = () => {
     <div>
       <div className="monthSelect">
         <span>
-          <button className="prev" onClick={() => selectMonth(-1)}>
+          <button className="selectButton" onClick={() => selectMonth(-1)}>
             {"<"}
           </button>
           {`${generate(current).nowData.data.format("YYYY")}年
           ${generate(current).nowData.data.format("M")}月`}
-          <button className="next" onClick={() => selectMonth(1)}>
+          <button className="selectButton" onClick={() => selectMonth(1)}>
             {">"}
           </button>
         </span>
@@ -228,13 +282,13 @@ const Calendar = () => {
         <tbody>
           <tr className="dayHeader">
             {week.map((day, index) => {
-              return <th key={index}>{day}</th>;
+              return <th key={index}>{day}曜日</th>;
             })}
           </tr>
 
           {/* <tr>
             {state.days.map((days, index) => {
-              return <td key={index}>{days.dayNumber}</td>;
+              return <td key={index}>{days.date}</td>;
             })}
           </tr> */}
           <CalendarBoard
