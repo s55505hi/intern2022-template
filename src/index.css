@@ -16,7 +16,7 @@
 
   display: flex;
   justify-content: center;
-  margin-top: 10vh;
+  margin-top: 5vh;
 }
 
 a {
@@ -117,7 +117,34 @@ td {
 }
 
 .today {
-  margin-right: 2px;
-  padding-right: 10px;
+  position: absolute;
+  left: -3px;
+  right: 0;
+  height: 2px;
+  top: 0.5px;
   background-color: #12bd45;
+}
+
+.schedule-create {
+  opacity: 0;
+}
+
+.schedule-create:hover {
+  opacity: 50;
+  background-color: #8ee0a7f5;
+  color: #ffffff;
+  padding-left: 5px;
+  margin-right: 2px;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.date-schedule {
+  background-color: #12bd45;
+  font-size: 9px;
+  color: #ffffff;
+  margin-right: 2px;
+  cursor: pointer;
+  padding-left: 5px;
+  margin-bottom: 1px;
 }
