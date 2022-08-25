@@ -1,9 +1,12 @@
 import {
+  Children,
   Component,
   createRef,
+  FormEventHandler,
   MutableRefObject,
   RefObject,
   TdHTMLAttributes,
+  useEffect,
   useState,
 } from "react";
 import {
@@ -32,6 +35,10 @@ import {
   Stack,
   IconButton,
   Icon,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  FormHelperText,
 } from "@chakra-ui/react";
 import {
   CalendarIcon,
@@ -51,9 +58,14 @@ import { Square } from "@chakra-ui/react";
 import dayjs, { Dayjs } from "dayjs";
 import ja from "dayjs/locale/ja";
 import weekday from "dayjs/plugin/weekday";
+import cloneDeep from "lodash/cloneDeep";
 import { useTable } from "react-table";
 import { columns } from "./tableData";
 import { useCounter } from "./Counter";
+import { useHolidays } from "./holidays";
+import { useForm } from "react-hook-form";
+import { useRef } from "react";
+import { property } from "lodash";
 
 //dayjs初期化
 dayjs.extend(weekday);
@@ -116,6 +128,7 @@ type DateProps = {
   schedules: Schedule[];
   addSchedule: (schedule: Schedule) => void;
   deleteSchedule: (schedule: Schedule) => void;
+  editSchedule: (schedule: Schedule, num: number) => void;
   onClick: () => void;
 };
 
@@ -128,9 +141,12 @@ const Date = (props: DateProps) => {
       })
     : {};
 
+  const inputRefs = useRef<RefObject<HTMLInputElement>[]>([]);
+
   const [refNum, setRefNum] = useState(0);
   const [state, setState] = useState<ScheduleState>();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [detail, setDetail] = useState<Schedule>();
   const [schedule, setSchedule] = useState<Schedule>({
     dayjsVal: props.dayjsVal,
     title: "",
@@ -140,20 +156,34 @@ const Date = (props: DateProps) => {
     description: "",
   });
 
-  let tmp: Schedule = {
+  const [input, setInput] = useState<Schedule>({
     dayjsVal: props.dayjsVal,
     title: "",
     day: "",
     startTime: "",
     endTime: "",
     description: "",
+  });
+  const handleChange = (newTitle: string) => {
+    // setInput({ [property]: e.target.value });
+
+    setInput((prev) => {
+      return { ...prev, title: newTitle };
+    });
   };
 
-  tmp = schedule;
+  // const handleS
 
-  const saveSchedule = () => {
-    console.log(tmp);
-    setSchedule(tmp);
+  let tmp = schedule;
+
+  const titleError = inputRefs.current[0]?.current?.value === "";
+  const dayError = inputRefs.current[1]?.current?.value === "";
+
+  const saveSchedule = (e?: RefObject<HTMLDivElement>) => {
+    console.log("tmp", tmp);
+    console.log("schedule", schedule);
+
+    // setSchedule(tmp);
     console.log(schedule);
     tmp = {
       dayjsVal: props.dayjsVal,
@@ -165,14 +195,20 @@ const Date = (props: DateProps) => {
     };
     setSchedule(tmp);
     console.log(schedule);
-
-    props.addSchedule(schedule);
+    if (state == "create") {
+      props.addSchedule(schedule);
+      console.log("add", props.schedules);
+    } else if (state == "edit" && e && e.current) {
+      console.log(+e.current.id);
+      setDetail(schedule);
+      props.editSchedule(schedule, +e.current?.id);
+      console.log("edit", props.schedules);
+    }
   };
 
   const createSchedule = () => {
     setState("create");
     console.log(state);
-    console.log(props.schedules);
     onOpen();
   };
 
@@ -183,6 +219,8 @@ const Date = (props: DateProps) => {
 
   const editSchedule = () => {
     setState("edit");
+    detail ? (tmp = detail) : {};
+    setSchedule(tmp);
     onOpen();
   };
 
@@ -196,6 +234,7 @@ const Date = (props: DateProps) => {
     if (e.current?.id) {
       console.log(e.current);
       props.deleteSchedule(props.schedules[+e.current?.id]);
+      console.log("delete", props.schedules);
     }
   };
 
@@ -219,6 +258,7 @@ const Date = (props: DateProps) => {
                     className="date-schedule"
                     onClick={() => {
                       setRefNum(index);
+                      setDetail(props.schedules[index]);
                       readSchedule();
                     }}
                     id={`${index}`}
@@ -246,6 +286,11 @@ const Date = (props: DateProps) => {
                     icon={<CheckIcon />}
                     aria-label={"Save"}
                     onClick={() => {
+                      console.log(titleError, dayError);
+                      console.log(
+                        inputRefs.current[0]?.current?.value,
+                        inputRefs.current[1]?.current?.value
+                      );
                       saveSchedule();
                       onClose();
                     }}
@@ -257,38 +302,69 @@ const Date = (props: DateProps) => {
                 </PopoverHeader>
                 <PopoverCloseButton />
                 <PopoverBody>
-                  <Stack>
-                    <Input
-                      placeholder="タイトルを入力"
-                      onChange={(event) => (tmp.title = event.target.value)}
-                    />
-                    <Input
-                      placeholder="年/月/日"
-                      type="date"
-                      onChange={(event) => (tmp.day = event.target.value)}
-                    />
-                    <HStack>
-                      <Input
-                        placeholder="--:--"
-                        type="time"
+                  <form name="createForm">
+                    <Stack>
+                      <FormControl isInvalid={titleError}>
+                        <Input
+                          name={"title"}
+                          isRequired
+                          placeholder="タイトルを入力"
+                          maxLength={10}
+                          value={input?.title}
+                          ref={inputRefs.current[0]}
+                          onChange={(event) => {
+                            tmp.title = event.target.value;
+                            handleChange(event.target.value);
+                          }}
+                        />
+                        {titleError ? (
+                          <FormErrorMessage>title isRequired</FormErrorMessage>
+                        ) : (
+                          <></>
+                        )}
+                      </FormControl>
+                      <FormControl>
+                        <Input
+                          isRequired
+                          // placeholder="年/月/日"
+                          type="date"
+                          pattern="^[0-9]{4}/[0-9]{2}/[0-9]{2}"
+                          ref={inputRefs.current[1]}
+                          onChange={(event) => (tmp.day = event.target.value)}
+                        />
+                        {dayError ? (
+                          <FormErrorMessage>day is isRequired</FormErrorMessage>
+                        ) : (
+                          <></>
+                        )}
+                      </FormControl>
+
+                      <HStack>
+                        <Input
+                          placeholder="--:--"
+                          type="time"
+                          onChange={(event) =>
+                            (tmp.startTime = event.target.value)
+                          }
+                        />
+                        <p>~</p>
+                        <Input
+                          placeholder="--:--"
+                          type="time"
+                          onChange={(event) =>
+                            (tmp.endTime = event.target.value)
+                          }
+                        />
+                      </HStack>
+                      <Textarea
+                        placeholder="memo"
+                        maxLength={255}
                         onChange={(event) =>
-                          (tmp.startTime = event.target.value)
+                          (tmp.description = event.target.value)
                         }
                       />
-                      <p>~</p>
-                      <Input
-                        placeholder="--:--"
-                        type="time"
-                        onChange={(event) => (tmp.endTime = event.target.value)}
-                      />
-                    </HStack>
-                    <Textarea
-                      placeholder="memo"
-                      onChange={(event) =>
-                        (tmp.description = event.target.value)
-                      }
-                    />
-                  </Stack>
+                    </Stack>
+                  </form>
                 </PopoverBody>
               </>
             ) : state == "read" ? (
@@ -301,7 +377,6 @@ const Date = (props: DateProps) => {
                     aria-label={"Edit"}
                     onClick={() => {
                       editSchedule();
-                      onClose();
                     }}
                     backgroundColor="white"
                     ml="145px"
@@ -325,25 +400,99 @@ const Date = (props: DateProps) => {
                   <Stack>
                     <HStack>
                       <Icon as={BsFonts} />
-                      <Text>{getSchedule(refs.current[refNum])?.title}</Text>
+                      <Text>{detail?.title}</Text>
                     </HStack>
                     <HStack>
                       <CalendarIcon />
-                      <Text>aa</Text>
+                      <Text>{detail?.day}</Text>
                     </HStack>
                     <HStack>
                       <Icon as={BsClock} />
-                      <Text>aa</Text>
+                      <Text>{detail?.startTime}</Text>
+                      <Text>~</Text>
+                      <Text>{detail?.endTime}</Text>
                     </HStack>
                     <HStack>
                       <Icon as={BsFilterLeft} />
-                      <Text>aa</Text>
+                      <Text>{detail?.description}</Text>
                     </HStack>
                   </Stack>
                 </PopoverBody>
               </>
             ) : (
-              <></>
+              <>
+                <PopoverArrow />
+                <PopoverHeader>
+                  予定の編集
+                  <IconButton
+                    icon={<CheckIcon />}
+                    aria-label={"Save"}
+                    onClick={() => {
+                      saveSchedule(refs.current[refNum]);
+                      setState("read");
+                      onOpen();
+                    }}
+                    backgroundColor="white"
+                    ml="145px"
+                    top="-7px"
+                    size="xs"
+                  />
+                  <IconButton
+                    icon={<DeleteIcon />}
+                    aria-label={"Delete"}
+                    onClick={() => {
+                      deleteSchedule(refs.current[refNum]);
+                      onClose();
+                    }}
+                    backgroundColor="white"
+                    top="-7px"
+                    size="xs"
+                  />
+                </PopoverHeader>
+                <PopoverCloseButton />
+                <PopoverBody>
+                  <Stack>
+                    <FormControl>
+                      <Input
+                        isRequired
+                        defaultValue={detail?.title}
+                        maxLength={10}
+                        onChange={(event) => (tmp.title = event.target.value)}
+                      ></Input>
+                    </FormControl>
+                    <FormControl>
+                      <Input
+                        isRequired
+                        defaultValue={detail?.day}
+                        type="date"
+                        onChange={(event) => (tmp.day = event.target.value)}
+                      ></Input>
+                    </FormControl>
+                    <HStack>
+                      <Input
+                        defaultValue={detail?.startTime}
+                        type="time"
+                        onChange={(event) =>
+                          (tmp.startTime = event.target.value)
+                        }
+                      />
+                      <p>~</p>
+                      <Input
+                        defaultValue={detail?.endTime}
+                        type="time"
+                        onChange={(event) => (tmp.endTime = event.target.value)}
+                      />
+                    </HStack>
+                    <Textarea
+                      maxLength={255}
+                      defaultValue={detail?.description}
+                      onChange={(event) =>
+                        (tmp.description = event.target.value)
+                      }
+                    />
+                  </Stack>
+                </PopoverBody>
+              </>
             )}
           </PopoverContent>
         </Popover>
@@ -391,6 +540,9 @@ const CalendarBoard = (props: MonthProps) => {
 
 const Calendar = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  useEffect(() => {
+    console.log("schedules", schedules);
+  }, [schedules]);
 
   //月選択用(現在日時からの相対)
   const [current, setCurrent] = useState(0);
@@ -426,6 +578,11 @@ const Calendar = () => {
         deleteSchedule: (schedule) => {
           setSchedules(schedules.filter((val) => val != schedule));
         },
+        editSchedule: (schedule, num) => {
+          setSchedules(
+            schedules.map((value, index) => (index === num ? schedule : value))
+          );
+        },
         onClick: () => handleClick(thisMonth),
       };
       calendarTable.push(thisMonth);
@@ -455,6 +612,11 @@ const Calendar = () => {
         deleteSchedule: (schedule: Schedule) => {
           setSchedules(schedules.filter((val) => val != schedule));
         },
+        editSchedule: (schedule: Schedule, num: number) => {
+          setSchedules(
+            schedules.map((value, index) => (index === num ? schedule : value))
+          );
+        },
         onClick: () => handleClick(thisMonth),
       };
       cnt++;
@@ -480,6 +642,11 @@ const Calendar = () => {
         },
         deleteSchedule: (schedule) => {
           setSchedules(schedules.filter((val) => val != schedule));
+        },
+        editSchedule: (schedule, num) => {
+          setSchedules(
+            schedules.map((value, index) => (index === num ? schedule : value))
+          );
         },
         onClick: () => handleClick(thisMonth),
       };
