@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
-import axios, {
-  AxiosRequestConfig,
-  AxiosResponse,
-  AxiosError,
-  Axios,
-} from "axios";
+import type { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
+import axios from "axios";
 
 const url = "https://holidays-jp.github.io/api/v1/datetime.json";
 
@@ -13,7 +9,7 @@ const options: AxiosRequestConfig = {
   method: "GET",
 };
 
-export const useHolidays = () => {
+const useHolidays = () => {
   const [holidays, setHolidays] = useState([]);
   const [status, setStaus] = useState<number | null>(null);
 
@@ -25,9 +21,11 @@ export const useHolidays = () => {
         setStaus(status);
       })
       .catch((e: AxiosError<{ error: string }>) => {
-        console.log(e.message);
+        // console.log(e.message);
       });
     // console.log(holidays.values());
-  });
+  }, []);
   return holidays;
 };
+
+export default useHolidays;

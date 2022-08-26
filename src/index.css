@@ -139,7 +139,8 @@ td {
   cursor: pointer;
 }
 
-.date-schedule {
+.date-schedule,
+.holiday {
   background-color: #12bd45;
   font-size: 9px;
   color: #ffffff;
