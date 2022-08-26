@@ -156,6 +156,8 @@ const Calendar = () => {
     <div>
       <div className="monthSelect">
         <span>
+          {/* <Icon /> */}
+          <span id="calendar">calendar</span>
           <button className="selectButton" onClick={() => selectMonth(-1)}>
             {"<"}
           </button>
