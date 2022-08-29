@@ -1,3 +1,8 @@
+html,
+body {
+  overflow: hidden;
+}
+
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -95,7 +100,7 @@ td {
   position: relative;
   text-align: left;
   padding-bottom: 60px;
-  height: 80px;
+  height: 100px;
 }
 
 .monthSelect {
@@ -120,9 +125,13 @@ td {
   position: absolute;
   left: -3px;
   right: 0;
-  height: 2px;
-  top: 0.5px;
+  height: 1px;
+  top: 0px;
   background-color: #12bd45;
+}
+
+.today + div {
+  color: #12bd45;
 }
 
 .schedule-create {
@@ -151,10 +160,29 @@ td {
 }
 
 .schedule-container {
-  height: 55px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 75px;
   overflow-y: auto;
 }
 
-#calendar{
-  margin-right: 80vh;
+#calendar {
+  margin-right: 85vh;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff8095;
+  border-radius: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #ffe6ea;
+  border-radius: 5px;
 }

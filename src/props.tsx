@@ -31,3 +31,11 @@ export type MonthProps = {
   squares: DateProps[];
   onClick: (data: DateProps) => void;
 };
+
+export type Data = {
+  data: Dayjs;
+  startDay: number;
+  endDay: number;
+  startDate: Dayjs;
+  endDate: Dayjs;
+};

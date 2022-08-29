@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import axios from "axios";
 
@@ -13,7 +13,7 @@ const useHolidays = () => {
   const [holidays, setHolidays] = useState([]);
   const [status, setStaus] = useState<number | null>(null);
 
-  useEffect(() => {
+  useMemo(() => {
     axios(options)
       .then((response: AxiosResponse) => {
         const { data, status } = response;

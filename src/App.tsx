@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./index.css";
 import dayjs from "dayjs";
 import ja from "dayjs/locale/ja";
 import weekday from "dayjs/plugin/weekday";
+import { CalendarIcon } from "@chakra-ui/icons";
 
-import type { Schedule, DateProps } from "./props";
+import type { Schedule, DateProps, Data } from "./props";
 import CalendarBoard from "./CalendarBoard";
 import { getCalendarData } from "./dayjsData";
 
@@ -26,129 +27,152 @@ const Calendar = () => {
   }, [schedules]);
 
   //月選択用(現在日時からの相対)
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState<number>(0);
 
-  let calendarTable: DateProps[] = [];
+  const [nowData, setNow] = useState<Data>(getCalendarData(0));
 
-  const generate = (i: number) => {
-    calendarTable = [];
-    // console.log(current);
-    const nowData = getCalendarData(i);
-    const lastMonthData = getCalendarData(i - 1);
-    const nextMonthData = getCalendarData(i + 1);
-    const lastDate = nowData.startDate.add(-1, "day").get("date");
+  const generate = useMemo(
+    () => (i: number) => {
+      const calendarTable: DateProps[] = [];
+      // console.log(current);
+      // const nowData = getCalendarData(i);
+      // setNow(getCalendarData(i));
+      const lastMonthData = getCalendarData(i - 1);
+      const nextMonthData = getCalendarData(i + 1);
+      const lastDate = nowData.startDate.add(-1, "day").get("date");
 
-    // console.log(nowData);
-    let cnt = 0;
+      // console.log(nowData);
+      let cnt = 0;
 
-    for (let date = nowData.startDay; date > 0; date--) {
-      const dayjsVal = nowData.startDate.subtract(date, "day");
-      const thisMonth: DateProps = {
-        id: cnt,
-        dayjsVal,
-        year: lastMonthData.data.get("year"),
-        month: lastMonthData.data.get("month"),
-        day: nowData.startDate.subtract(date, "day").day(),
-        date: lastDate - date + 1,
-        schedules: schedules.filter((schedule) => {
-          return schedule.dayjsVal.isSame(dayjsVal);
-        }),
-        addSchedule: (schedule) => {
-          setSchedules([...schedules, schedule]);
-        },
-        deleteSchedule: (schedule) => {
-          setSchedules(schedules.filter((val) => val != schedule));
-        },
-        editSchedule: (schedule, num) => {
-          setSchedules(
-            schedules.map((value, index) => (index === num ? schedule : value))
-          );
-        },
-        onClick: () => handleClick(thisMonth),
-      };
-      calendarTable.push(thisMonth);
-      cnt++;
-    }
+      for (let date = nowData.startDay; date > 0; date--) {
+        const dayjsVal = nowData.startDate.subtract(date, "day");
+        const thisMonth: DateProps = {
+          id: cnt,
+          dayjsVal,
+          year: lastMonthData.data.get("year"),
+          month: lastMonthData.data.get("month"),
+          day: nowData.startDate.subtract(date, "day").day(),
+          date: lastDate - date + 1,
+          schedules: schedules.filter((schedule) => {
+            return schedule.dayjsVal.isSame(dayjsVal);
+          }),
+          addSchedule: (schedule) => {
+            setSchedules([...schedules, schedule]);
+          },
+          deleteSchedule: (schedule) => {
+            setSchedules(schedules.filter((val) => val != schedule));
+          },
+          editSchedule: (schedule, num) => {
+            setSchedules(
+              schedules.map((value, index) =>
+                index === num ? schedule : value
+              )
+            );
+          },
+          onClick: () => handleClick(thisMonth),
+        };
+        calendarTable.push(thisMonth);
+        cnt++;
+      }
 
-    for (
-      let date = nowData.startDate.get("date");
-      date < nowData.endDate.get("date") + 1;
-      date++
-    ) {
-      // console.log(date);
-      const dayjsVal = nowData.startDate.add(date - 1, "day");
-      const thisMonth = {
-        id: cnt,
-        dayjsVal: nowData.startDate.add(date - 1, "day"),
-        year: nowData.data.get("year"),
-        month: nowData.data.get("month"),
-        day: nowData.startDate.add(date - 1, "day").day(),
-        date: date,
-        schedules: schedules.filter((schedule) => {
-          return schedule.dayjsVal.isSame(dayjsVal);
-        }),
-        addSchedule: (schedule: Schedule) => {
-          setSchedules([...schedules, schedule]);
-        },
-        deleteSchedule: (schedule: Schedule) => {
-          setSchedules(schedules.filter((val) => val != schedule));
-        },
-        editSchedule: (schedule: Schedule, num: number) => {
-          setSchedules(
-            schedules.map((value, index) => (index === num ? schedule : value))
-          );
-        },
-        onClick: () => handleClick(thisMonth),
-      };
-      cnt++;
-      calendarTable.push(thisMonth);
-    }
-    // console.log(nowData.endDay);
+      for (
+        let date = nowData.startDate.get("date");
+        date < nowData.endDate.get("date") + 1;
+        date++
+      ) {
+        // console.log(date);
+        const dayjsVal = nowData.startDate.add(date - 1, "day");
+        const thisMonth = {
+          id: cnt,
+          dayjsVal: nowData.startDate.add(date - 1, "day"),
+          year: nowData.data.get("year"),
+          month: nowData.data.get("month"),
+          day: nowData.startDate.add(date - 1, "day").day(),
+          date: date,
+          schedules: schedules.filter((schedule) => {
+            return schedule.dayjsVal.isSame(dayjsVal);
+          }),
+          addSchedule: (schedule: Schedule) => {
+            setSchedules([...schedules, schedule]);
+          },
+          deleteSchedule: (schedule: Schedule) => {
+            setSchedules(schedules.filter((val) => val != schedule));
+          },
+          editSchedule: (schedule: Schedule, num: number) => {
+            setSchedules(
+              schedules.map((value, index) =>
+                index === num ? schedule : value
+              )
+            );
+          },
+          onClick: () => handleClick(thisMonth),
+        };
+        cnt++;
+        calendarTable.push(thisMonth);
+      }
+      // console.log(nowData.endDay);
 
-    for (let day = 1; day < 7 - nowData.endDay; day++) {
-      // console.log(day);
-      const dayjsVal = nowData.endDate.add(day, "day");
-      const thisMonth: DateProps = {
-        id: cnt,
-        dayjsVal,
-        year: nextMonthData.data.get("year"),
-        month: nextMonthData.data.get("month"),
-        day: nowData.endDay + day,
-        date: nowData.endDate.add(day, "day").get("date"),
-        schedules: schedules.filter((schedule) => {
-          return schedule.dayjsVal.isSame(dayjsVal);
-        }),
-        addSchedule: (schedule) => {
-          setSchedules([...schedules, schedule]);
-        },
-        deleteSchedule: (schedule) => {
-          setSchedules(schedules.filter((val) => val != schedule));
-        },
-        editSchedule: (schedule, num) => {
-          setSchedules(
-            schedules.map((value, index) => (index === num ? schedule : value))
-          );
-        },
-        onClick: () => handleClick(thisMonth),
-      };
+      for (let day = 1; day < 7 - nowData.endDay; day++) {
+        const dayjsVal = nowData.endDate.add(day, "day").startOf("date");
+        // console.log(dayjsVal);
+        const thisMonth: DateProps = {
+          id: cnt,
+          dayjsVal,
+          year: nextMonthData.data.get("year"),
+          month: nextMonthData.data.get("month"),
+          day: nowData.endDay + day,
+          date: nowData.endDate.add(day, "day").get("date"),
+          schedules: schedules.filter((schedule) => {
+            // console.log(schedule.dayjsVal, dayjsVal);
+            return schedule.dayjsVal.isSame(dayjsVal);
+          }),
+          addSchedule: (schedule) => {
+            setSchedules([...schedules, schedule]);
+          },
+          deleteSchedule: (schedule) => {
+            setSchedules(schedules.filter((val) => val != schedule));
+          },
+          editSchedule: (schedule, num) => {
+            setSchedules(
+              schedules.map((value, index) =>
+                index === num ? schedule : value
+              )
+            );
+          },
+          onClick: () => handleClick(thisMonth),
+        };
 
-      cnt++;
-      calendarTable.push(thisMonth);
-    }
-    // console.log(calendarTable);
-    return { calendarTable, nowData };
-  };
+        cnt++;
+        calendarTable.push(thisMonth);
+      }
+      // console.log(calendarTable);
+      return calendarTable;
+    },
+    [
+      nowData.data,
+      nowData.endDate,
+      nowData.endDay,
+      nowData.startDate,
+      nowData.startDay,
+      schedules,
+    ]
+  );
 
   const selectMonth = (i: number) => {
-    setCurrent((current) => current + i);
+    setCurrent((prev) => prev + i);
     console.log(current);
     // generate(current);
     return;
   };
 
+  useEffect(() => {
+    setNow(getCalendarData(current));
+  }, [current]);
+
+  const [table, setTable] = useState<DateProps[]>();
+
   const handleClick = (data: DateProps) => {
     console.log(data.id);
-    console.log(calendarTable[data.id]);
     return;
   };
 
@@ -156,13 +180,13 @@ const Calendar = () => {
     <div>
       <div className="monthSelect">
         <span>
-          {/* <Icon /> */}
+          <CalendarIcon boxSize={6} color={"green.500"} />
           <span id="calendar">calendar</span>
           <button className="selectButton" onClick={() => selectMonth(-1)}>
             {"<"}
           </button>
-          {`${generate(current).nowData.data.format("YYYY")}年
-          ${generate(current).nowData.data.format("M")}月`}
+          {`${nowData.data.format("YYYY")}年
+          ${nowData.data.format("M")}月`}
           <button className="selectButton" onClick={() => selectMonth(1)}>
             {">"}
           </button>
@@ -176,10 +200,7 @@ const Calendar = () => {
             })}
           </tr>
 
-          <CalendarBoard
-            squares={generate(current).calendarTable}
-            onClick={handleClick}
-          />
+          <CalendarBoard squares={generate(current)} onClick={handleClick} />
         </tbody>
       </table>
     </div>

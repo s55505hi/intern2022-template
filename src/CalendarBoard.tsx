@@ -1,6 +1,7 @@
 import type { MonthProps } from "./props";
 import Date from "./Date";
 import { Days } from "./enums";
+import { Popover, PopoverTrigger } from "@chakra-ui/react";
 
 //日ごとの表示
 const CalendarBoard = (props: MonthProps) => {
@@ -23,7 +24,7 @@ const CalendarBoard = (props: MonthProps) => {
       </tr>
     );
   }
-  // console.log(elm);
+  console.log(elm);
   return (
     <>
       {elm.map((value) => {
