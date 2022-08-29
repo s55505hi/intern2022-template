@@ -156,8 +156,8 @@ const Date = (props: DateProps) => {
         isOpen={isOpen}
         onClose={onClose}
         z-index={999}
-        initialFocusRef={initialFocusRef}
-        returnFocusOnClose={true}
+        // initialFocusRef={initialFocusRef}
+        // returnFocusOnClose={true}
       >
         {props.dayjsVal.format("DD/MM/YYYY") == now.format("DD/MM/YYYY") ? (
           <>
