@@ -21,7 +21,7 @@ const useHolidays = () => {
         setStaus(status);
       })
       .catch((e: AxiosError<{ error: string }>) => {
-        // console.log(e.message);
+        console.log(e.message);
       });
     // console.log(holidays.values());
   }, []);

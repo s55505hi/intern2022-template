@@ -80,9 +80,7 @@ button:focus-visible {
 
 th,
 td {
-  border: solid 1px;
-  /* padding: 10px; */
-  width: 120px;
+  border: solid 0.5px gray;
 }
 
 table {
@@ -94,6 +92,7 @@ table {
 th {
   text-align: center;
   height: auto;
+  border-bottom: 2px solid rgb(201, 201, 201);
 }
 
 td {
@@ -146,6 +145,7 @@ td {
   margin-right: 2px;
   font-size: 9px;
   cursor: pointer;
+  border-radius: 2px;
 }
 
 .date-schedule,
@@ -157,6 +157,8 @@ td {
   cursor: pointer;
   padding-left: 5px;
   margin-bottom: 1px;
+  border-radius: 2px;
+
 }
 
 .schedule-container {
@@ -168,7 +170,8 @@ td {
 }
 
 #calendar {
-  margin-right: 85vh;
+  margin-right: 80vh;
+  font-size: larger;
 }
 
 ::-webkit-scrollbar {
