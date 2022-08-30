@@ -24,7 +24,7 @@ const CalendarBoard = (props: MonthProps) => {
       </tr>
     );
   }
-  console.log(elm);
+  // console.log(elm);
   return (
     <>
       {elm.map((value) => {

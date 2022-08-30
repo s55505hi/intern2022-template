@@ -8,6 +8,16 @@ import { CalendarIcon } from "@chakra-ui/icons";
 import type { Schedule, DateProps, Data } from "./props";
 import CalendarBoard from "./CalendarBoard";
 import { getCalendarData } from "./dayjsData";
+import {
+  Popover,
+  PopoverBody,
+  PopoverArrow,
+  PopoverContent,
+  Stack,
+  PopoverTrigger,
+  useDisclosure,
+  FormControl,
+} from "@chakra-ui/react";
 
 //dayjs初期化
 dayjs.extend(weekday);
@@ -21,6 +31,7 @@ const week = ["日", "月", "火", "水", "木", "金", "土"];
 // console.log(week[week.length - 1]);
 
 const Calendar = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   useEffect(() => {
     console.log("schedules", schedules);
@@ -176,21 +187,54 @@ const Calendar = () => {
     return;
   };
 
+  const monthSelect = () => {
+    console.log("click");
+    onOpen();
+  };
+
   return (
     <div>
       <div className="monthSelect">
-        <span>
-          <CalendarIcon boxSize={6} mb={1} color={"green.500"} />
-          <span id="calendar">calendar</span>
-          <button className="selectButton" onClick={() => selectMonth(-1)}>
-            {"<"}
-          </button>
-          {`${nowData.data.format("YYYY")}年
+        <Popover isOpen={isOpen} onClose={onClose}>
+          <span>
+            <CalendarIcon boxSize={6} mb={1} color={"green.500"} />
+            <span id="calendar">calendar</span>
+            <button className="selectButton" onClick={() => selectMonth(-1)}>
+              {"<"}
+            </button>
+            <PopoverTrigger>
+              <button onClick={monthSelect}>
+                {`${nowData.data.format("YYYY")}年
           ${nowData.data.format("M")}月`}
-          <button className="selectButton" onClick={() => selectMonth(1)}>
-            {">"}
-          </button>
-        </span>
+              </button>
+            </PopoverTrigger>
+
+            <button className="selectButton" onClick={() => selectMonth(1)}>
+              {">"}
+            </button>
+          </span>
+          <PopoverBody>
+            <PopoverContent>
+              <PopoverArrow />
+              <Stack>
+                <input
+                  type="month"
+                  required
+                  defaultValue={nowData.data.format("YYYY-MM")}
+                  onChange={(event) => {
+                    const eventVal = event.target.value;
+                    console.log(eventVal);
+                    const tmp = dayjs(nowData.data.format("YYYY-MM"));
+                    // console.log(dayjs(eventVal));
+                    // console.log(tmp.diff(eventVal, "month") * -1);
+                    selectMonth(tmp.diff(eventVal, "month") * -1);
+                    onClose();
+                  }}
+                ></input>
+              </Stack>
+            </PopoverContent>
+          </PopoverBody>
+        </Popover>
       </div>
       <table>
         <tbody>
